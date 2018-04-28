@@ -1,0 +1,17 @@
+---
+
+- name: create PGDATA directory
+  file: 
+    path: "{{ pg_data }}/PGDATA"
+    state: directory
+    owner: "{{ pg_owner }}"
+    group: "{{ pg_group }}"
+    mode: 0700
+
+- name: setup and initdb
+  command: "/usr/pgsql-{{ pg_version }}/bin/initdb -D {{ pg_data }}/PGDATA "
+  become: yes
+  become_user: "{{ pg_owner }}"
+  ignore_errors: yes
+
+

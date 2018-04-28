@@ -1,0 +1,35 @@
+---
+# defaults file for postgresql_install
+
+# postgreSQL version
+pg_version: 10
+
+# repository url for the postgresSQL packages
+
+pg_user: postgres
+
+pg_port: 5432
+
+pg_lvm: postgres
+
+pg_pvs: "/dev/sdb"
+
+pg_data_lv: pgdatalv
+
+pg_log_lv: pg_log_lv
+
+pg_data: "/postgres/data"
+
+pg_log: "/postgres/archivelog"
+
+pg_fs_type: ext4
+
+pg_owner: postgres
+
+pg_group: postgres
+
+pg_interface: "{{ ansible_all_ipv4_addresses[0] }}"
+
+pg_replica_user: replica
+
+pg_replica_password: password

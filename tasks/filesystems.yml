@@ -1,0 +1,92 @@
+---
+
+- name: install the needed packages for lvm operations
+  yum: name={{ item }} state=present
+  with_items:
+    - parted
+    - lvm2
+
+# - name: create the partition table for "{{ oracle_vg }}"
+#   command: parted -s "{{ pg_pvs }}" mklabel gpt mkpart oravg 1G 100% set 1 lvm on quit 
+#   args:
+#     creates: "{{ oracle_pv }}1"
+- name: create the partition table for "{{ pg_lvm }}"
+  parted: 
+    device: "{{ pg_pvs }}"
+    number: 1
+    state: present
+    part_start: 1GiB
+    label: gpt
+    part_type: primary
+    flags: [ lvm ]
+
+- name: capture the size partition
+  parted:
+    device: "{{ pg_pvs }}"
+    number: 1
+    state: info
+  register: partsize
+
+- name: decide on the lv sizes
+  set_fact:
+    pg_data_lv_size: "{{ partsize.partitions[0].size | round(0,'ceil') * 0.6 }}"
+    pg_log_lv_size: "{{ partsize.partitions[0].size | round(0,'ceil') * 0.2 }}"
+    pg_part_unit: "{{ partsize.partitions[0].unit[0]  }}"
+
+- name: create the volume group
+  lvg:
+    vg: "{{ pg_lvm }}"
+    pvs: "{{ pg_pvs }}1"
+    state: present
+  when: pg_lvm is defined
+
+- name: create the logical volumes
+  lvol: 
+    vg: "{{ pg_lvm }}"
+    lv: "{{ item.lv }}"
+    size: "{{ item.size }}"
+    state: present
+    force: yes  
+  with_items:
+    - { lv: "{{ pg_data_lv }}", size: "{{ pg_data_lv_size | int }}{{ pg_part_unit }}" }
+    - { lv: "{{ pg_log_lv }}", size: "{{ pg_log_lv_size | int }}{{ pg_part_unit }}" }
+
+- name: create the filesystems 
+  filesystem: fstype="{{ pg_fs_type }}" dev="/dev/{{ pg_lvm }}/{{ item }}"
+  with_items:
+    - "{{ pg_data_lv }}"
+    - "{{ pg_log_lv }}"
+
+- name: create the mountpoints
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0700
+    owner: "{{ pg_owner }}"
+    group: "{{ pg_group }}"
+  with_items:
+    - "{{ pg_data }}"
+    - "{{ pg_log }}"
+    
+- name: create and mount filesystems
+  mount:
+  args:
+    path: "{{ item.mountpoint }}"
+    src: "/dev/{{ pg_lvm }}/{{ item.lv }}"
+    boot: yes
+    state: mounted
+    fstype: "{{ pg_fs_type }}"
+  with_items:
+    - { lv: "{{ pg_data_lv }}", mountpoint: "{{ pg_data }}" }
+    - { lv: "{{ pg_log_lv }}", mountpoint: "{{ pg_log }}" }
+
+- name: set the ownership for the mount
+  file:
+    path: "{{ item }}"
+    owner: "{{ pg_owner }}"
+    group: "{{ pg_group }}"
+    mode: 0700
+    recurse: yes
+  with_items: 
+    - "{{ pg_data }}"
+    - "{{ pg_log }}"

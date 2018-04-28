@@ -1,0 +1,27 @@
+---
+
+- name: modify postgresql.conf
+  lineinfile: 
+    path: "{{ pg_data }}/PGDATA/postgresql.conf"
+    regexp: "^{{ item.regex }}"
+    line: "{{ item.value }}"
+  with_items:
+    - { regex: listen_addresses , value: "listen_addresses = '{{ pg_interface }}'" }
+    - { regex: wal_level, value: "wal_level = hot_standby" }
+    - { regex: synchronous_commit, value: "synchronous_commit = local" }
+    - { regex: archive_mode, value: "archive_mode = on" }
+    - { regex: archive_command, value: "archive_command = 'cp %p {{ pg_log }}/%f'" }
+    - { regex: max_wal_senders, value: "max_wal_senders = 2" }
+    - { regex: wal_keep_segments, value: "wal_keep_segments = 10" }
+    - { regex: synchronous_standby_names, value: "synchronous_standby_names = '{{ pg_app_name }}'" }
+
+- name: modify pg_hba.conf
+  lineinfile: 
+    path: "{{ pg_data }}/PGDATA/pg_hba.conf"
+    regexp: '^{{ item.regex }}'
+    line: "{{ item.value }}"
+  with_items:
+    - { regex: 'host\s{1,}replication\s{1,}{{ pg_replica_user }}\s{1,}127.0.0.1/32\s{1,}md5' , value: "host replication {{ pg_replica_user }} 127.0.0.1/32 md5" }
+    - { regex: 'host\s{1,}replication\s{1,}{{ pg_replica_user }}\s{1,}{{ pg_interface }}/32\s{1,}md5' , value: "host replication {{ pg_replica_user }} {{ pg_interface }}/32 md5" }    
+    - { regex: 'host\s{1,}replication\s{1,}{{ pg_replica_user }}\s{1,}{{ pg_slave }}/32\s{1,}md5' , value: "host replication {{ pg_replica_user }} {{ pg_slave }}/32 md5" }
+    

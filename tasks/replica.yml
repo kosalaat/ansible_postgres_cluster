@@ -1,0 +1,13 @@
+---
+
+- name: creat the replica user
+  command: /usr/pgsql-{{ pg_version }}/bin/createuser --replication {{ pg_replica_user }}
+  ignore_errors: yes
+  become: yes
+  become_user: "{{ pg_owner }}"
+
+- name: update the replica user password
+  command: /usr/pgsql-{{ pg_version }}/bin/psql -c "alter user {{ pg_replica_user }} password '{{ pg_replica_password }}';"
+  become: yes
+  become_user: "{{ pg_owner }}"
+

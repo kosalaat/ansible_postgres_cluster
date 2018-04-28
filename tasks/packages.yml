@@ -1,0 +1,16 @@
+---
+
+- name: install postgres repository
+  yum: name={{ pg_repo }} state=present
+
+- name: install postgresql
+  yum: name={{ item }} state=present
+  with_items:
+    - "postgresql{{ pg_version | replace ('.','')}}-server"
+    - "postgresql{{ pg_version | replace ('.','')}}-contrib"
+    - "postgresql{{ pg_version | replace ('.','')}}" # Client components
+    - net-tools
+    
+
+
+

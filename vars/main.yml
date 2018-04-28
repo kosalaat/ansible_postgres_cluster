@@ -1,0 +1,7 @@
+---
+
+pg_repo: "https://yum.postgresql.org/{{ pg_version }}/redhat/rhel-{{ ansible_distribution_major_version }}-{{ ansible_machine }}/pgdg-centos{{ pg_version | replace ('.','')}}-{{ pg_version }}-{{ pg_version | get_pg_revision }}.noarch.rpm"
+
+rh_epel_6: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm"
+
+rh_epel_7: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm"

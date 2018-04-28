@@ -1,0 +1,29 @@
+---
+
+- name: restart postsql service for rhel 6
+  block:
+    - service:
+        name: "postgresql-{{ pg_version }}"
+        enabled: yes
+        state: restarted
+  rescue: 
+    - service:
+        name: "postgresql-{{ pg_version }}"
+        enabled: yes
+        state: started
+  when: ansible_distribution_major_version == "6"
+
+- name: restart postgressql service for rhel 7
+  systemd: 
+    name: postgresql-{{ pg_version }}.service 
+    state: restarted
+    enabled: true
+    daemon_reload: yes
+  when: ansible_distribution_major_version == "7"
+
+- name: reload the postgresql server
+  command: /usr/pgsql-{{ pg_version }}/bin/pg_ctl reload
+  become: yes
+  become_user: "{{ pg_owner }}"
+  environment: 
+    PGDATA: "{{ pg_data }}/PGDATA"

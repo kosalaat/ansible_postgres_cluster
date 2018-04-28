@@ -1,0 +1,21 @@
+---
+
+- name: open pgsql port for RHEL 7
+  block:
+    - name: open firewall ports 
+      firewalld: port={{ pg_port }}/tcp state=enabled permanent=yes
+    - name: restart firewall
+      service: name=firewalld state=restarted
+  when: ansible_distribution_major_version == "7"
+
+- name: open pgsql port for RHEL 6
+  block:
+    - name: open firewall ports 
+      iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: "{{ pg_port }}"
+        jump: ACCEPT
+    - name: save iptables settings
+      command: "service iptables save"
+  when: ansible_distribution_major_version == "6"

@@ -1,0 +1,26 @@
+---
+
+- name: update the .service file
+  lineinfile:
+    path: "/usr/lib/systemd/system/postgresql-{{ pg_version }}.service"
+    regexp: "^{{ item.regex }}"
+    line: "{{ item.value }}"
+  with_items:
+    - { regex: Environment=PGDATA , value: "Environment=PGDATA={{ pg_data }}/PGDATA" }
+    - { regex: User, value: "User={{ pg_owner }}" }
+    - { regex: Group, value: "Group={{ pg_group }}" }
+  when: ansible_distribution_major_version == "7"
+
+
+- name: update init.d file for postgresql
+  lineinfile: 
+    path: "/etc/init.d/postgresql-{{ pg_version }}"
+    regexp: "^{{ item.regex }}"
+    line: "{{ item.regex }}={{ item.value }}"
+  with_items:
+    - { regex: PGDATA , value: "{{ pg_data }}/PGDATA" }
+    - { regex: PGLOG, value: "{{ pg_data }}/pgstartup.log" }
+    - { regex: PGUPLOG, value: "{{ pg_data }}/pgupgrade.log" }
+  when: ansible_distribution_major_version == "6"
+
+

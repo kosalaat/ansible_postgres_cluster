@@ -1,0 +1,52 @@
+---
+# tasks file for postgresql_install
+
+- name: ensure pg group
+  group: name={{ pg_group }} state=present 
+
+- name: ensure pg users
+  user: name={{ pg_owner }} group={{ pg_group }} state=present
+
+- import_tasks: epel.yml
+  tags: epel
+
+- import_tasks: filesystems.yml
+  tags: filesystem
+
+- import_tasks: packages.yml
+  tags: packages
+
+- name: check for existing database and version
+  command: cat {{ pg_data }}/PGDATA/PG_VERSION
+  register: pgversion
+  ignore_errors: yes
+
+- import_tasks: initdb.yml
+  tags: initdb
+  when: master_node == 'yes' and pgversion.rc != 0
+
+- import_tasks: firewall.yml
+  tags: firewall
+
+- import_tasks: service.yml
+  tags: service
+
+- import_tasks: master_node.yml
+  when: master_node == 'yes'
+  tags: postgres
+
+- import_tasks: service_start.yml
+  when: master_node == 'yes'
+  tags: postgres
+
+- import_tasks: replica.yml
+  when: master_node == 'yes'
+  tags: postgres
+
+- import_tasks: slave_node.yml
+  tags: postgres 
+  when: master_node == 'no' 
+
+- import_tasks: service_start.yml
+  when: master_node == 'no'
+  tags: postgres
