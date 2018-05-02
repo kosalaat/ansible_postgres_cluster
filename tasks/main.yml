@@ -1,6 +1,28 @@
 ---
 # tasks file for postgresql_install
 
+- name: is master node defined
+  fail:
+    msg: "master_node need to be defined"
+  when: master_node == 'yes' or master_node == 'no'
+
+- name: ensure all the required playbook variables for master
+  fail:
+    msg: "vatiable {{ item }} is required"
+  when: item == '' and master_node == 'yes'
+  with_items: 
+    - pg_slave
+    - pg_app_name
+  
+- name: ensure all the required playbook variables for slave
+  fail:
+    msg: "vatiable {{ item }} is required"
+  when: item == '' and master_node == 'no'
+  with_items: 
+    - pg_slave
+    - pg_app_name
+
+
 - name: ensure pg group
   group: name={{ pg_group }} state=present 
 
@@ -16,14 +38,9 @@
 - import_tasks: packages.yml
   tags: packages
 
-- name: check for existing database and version
-  command: cat {{ pg_data }}/PGDATA/PG_VERSION
-  register: pgversion
-  ignore_errors: yes
-
 - import_tasks: initdb.yml
   tags: initdb
-  when: master_node == 'yes' and pgversion.rc != 0
+  when: master_node == 'yes'
 
 - import_tasks: firewall.yml
   tags: firewall

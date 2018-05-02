@@ -13,5 +13,5 @@
   become: yes
   become_user: "{{ pg_owner }}"
   ignore_errors: yes
-
-
+  args:
+    creates: "{{ pg_data }}/PGDATA/PG_VERSION"
